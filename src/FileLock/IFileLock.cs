@@ -2,7 +2,7 @@
 {
     public interface IFileLock
     {
-        string LockName { get; }
+        string LockPath { get; }
 
         bool TryAcquireLock();
 

@@ -45,7 +45,7 @@
     </Compile>
     <Compile Include="SimpleFileLock.cs" />
     <Compile Include="FileLockContent.cs" />
-    <Compile Include="FileSys\LockIO.cs" />
+    <Compile Include="LockIO.cs" />
     <Compile Include="IFileLock.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

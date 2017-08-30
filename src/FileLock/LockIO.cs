@@ -2,7 +2,7 @@
 using System.IO;
 using System.Runtime.Serialization.Json;
 
-namespace FileLock.FileSys
+namespace FileLock
 {
     internal static class LockIO
     {

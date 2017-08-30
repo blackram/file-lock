@@ -27,6 +27,12 @@ namespace FileLock
         /// </summary>
         [DataMember]
         public string ProcessName { get; set; }
+
+        /// <summary>
+        /// The name of the machine running the process
+        /// </summary>
+        [DataMember]
+        public string MachineName {get; set; }
     }
 
     public class MissingFileLockContent : FileLockContent

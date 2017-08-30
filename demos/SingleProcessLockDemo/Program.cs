@@ -19,22 +19,22 @@ namespace SingleProcessLockDemo
 
             for (var i = 0; i < 20; i++)
             {
-                Console.WriteLine("{0}: PID {1} attempting to acquire FileLock {2} (attempt {3}", DateTime.Now, process.Id, fileLock.LockName, i);
+                Console.WriteLine("{0}: PID {1} attempting to acquire FileLock {2} (attempt {3}", DateTime.Now, process.Id, fileLock.LockPath, i);
                 var acquired = fileLock.TryAcquireLock();
                 if (acquired)
                 {
                     Console.WriteLine("{0}: PID {1} ACQUIRED FileLock {2} - releasing", DateTime.Now, process.Id,
-                        fileLock.LockName);
+                        fileLock.LockPath);
                     fileLock.ReleaseLock();
                     Console.WriteLine("{0}: PID {1} RELEASED FileLock {2} - releasing", DateTime.Now, process.Id,
-                        fileLock.LockName);
+                        fileLock.LockPath);
                     Console.WriteLine("{0}: PID {1} EXITING", DateTime.Now, process.Id);
                     return;
                 }
                 else
                 {
                     Console.WriteLine("{0}: PID {1} UNABLE TO ACQUIRE FileLock {2} - sleeping", DateTime.Now, process.Id,
-                        fileLock.LockName);
+                        fileLock.LockPath);
                     Thread.Sleep(TimeSpan.FromSeconds(1));
                 }
             }

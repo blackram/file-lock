@@ -1,30 +1,26 @@
 ﻿using System;
 using System.Diagnostics;
-using FileLock.FileSys;
 
 namespace FileLock
 {
     public class SimpleFileLock : IFileLock
-    {
-        protected SimpleFileLock(string lockName, TimeSpan lockTimeout)
+    {        
+        public TimeSpan LockTimeout { get; private set; }
+        public string LockPath { get; private set; }
+
+        protected SimpleFileLock(string lockPath, TimeSpan lockTimeout)
         {
-            LockName = lockName;
+            LockPath = lockPath;
             LockTimeout = lockTimeout;
         }
 
-        public TimeSpan LockTimeout { get; private set; }
-
-        public string LockName { get; private set; }
-
-        private string LockFilePath { get; set; }
-
         public bool TryAcquireLock()
         {
-            if (LockIO.LockExists(LockFilePath))
+            if (LockIO.LockExists(LockPath))
             {
-                var lockContent = LockIO.ReadLock(LockFilePath);
+                var lockContent = LockIO.ReadLock(LockPath);
 
-                //Someone else owns the lock
+                //Someone else has the lock file 'locked'
                 if (lockContent.GetType() == typeof(OtherProcessOwnsFileLockContent))
                 {
                     return false;
@@ -36,31 +32,33 @@ namespace FileLock
                     return AcquireLock();
                 }
 
-
-                var lockWriteTime = new DateTime(lockContent.Timestamp);
+                var currentProcess = Process.GetCurrentProcess();
 
                 //This lock belongs to this process - we can reacquire the lock
-                if (lockContent.PID == Process.GetCurrentProcess().Id)
+                if (lockContent.PID == currentProcess.Id && lockContent.MachineName.Equals(currentProcess.MachineName, StringComparison.InvariantCultureIgnoreCase))
                 {
                     return AcquireLock();
                 }
 
-                //The lock has not timed out - we can't acquire it
+                //The lock has not timed out - we won't attempt to acquire it
+                var lockWriteTime = new DateTime(lockContent.Timestamp);
+                
                 if (!(Math.Abs((DateTime.Now - lockWriteTime).TotalSeconds) > LockTimeout.TotalSeconds)) return false;
             }
-
-            //Acquire the lock
             
             return AcquireLock();
         }
 
-
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         public bool ReleaseLock()
         {
             //Need to own the lock in order to release it (and we can reacquire the lock inside the current process)
-            if (LockIO.LockExists(LockFilePath) && TryAcquireLock())
-                LockIO.DeleteLock(LockFilePath);
+            if (LockIO.LockExists(LockPath) && TryAcquireLock())
+                LockIO.DeleteLock(LockPath);
+
             return true;
         }
 
@@ -73,13 +71,14 @@ namespace FileLock
             {
                 PID = process.Id,
                 Timestamp = DateTime.Now.Ticks,
-                ProcessName = process.ProcessName
+                ProcessName = process.ProcessName,
+                MachineName = Environment.MachineName
             };
         }
 
         private bool AcquireLock()
         {
-            return LockIO.WriteLock(LockFilePath, CreateLockContent());
+            return LockIO.WriteLock(LockPath, CreateLockContent());
         }
 
         #endregion
@@ -88,10 +87,13 @@ namespace FileLock
 
         public static SimpleFileLock Create(string lockName, TimeSpan lockTimeout)
         {
-            if (string.IsNullOrEmpty(lockName))
-                throw new ArgumentNullException("lockName", "lockName cannot be null or emtpy.");
+            Debug.Assert(lockName != null);
+            Debug.Assert(lockName.Length > 0);
 
-            return new SimpleFileLock(lockName, lockTimeout) { LockFilePath = LockIO.GetFilePath(lockName) };
+            if (string.IsNullOrEmpty(lockName))
+                throw new ArgumentNullException(nameof(lockName), "Cannot be null or empty.");
+
+            return new SimpleFileLock(lockName, lockTimeout) { LockPath = LockIO.GetFilePath(lockName) };
         }
 
         #endregion
